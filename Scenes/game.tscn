@@ -1,0 +1,91 @@
+[gd_scene load_steps=10 format=2]
+
+[ext_resource path="res://sprites/background.png" type="Texture" id=1]
+[ext_resource path="res://sprites/ship.png" type="Texture" id=2]
+[ext_resource path="res://Scripts/ship.gd" type="Script" id=3]
+[ext_resource path="res://Scripts/background.gd" type="Script" id=4]
+[ext_resource path="res://Scenes/asteroid.tscn" type="PackedScene" id=5]
+[ext_resource path="res://Scripts/enemies.gd" type="Script" id=6]
+
+[sub_resource type="Shader" id=2]
+code = "shader_type canvas_item;
+
+uniform float vel = -.5f;
+uniform float des = 0f;
+uniform float time = 0f;
+
+void fragment() {
+	COLOR = texture(TEXTURE, UV + (vec2(0, 1f) * time * vel) + vec2(des, 0) );
+}"
+
+[sub_resource type="ShaderMaterial" id=3]
+shader = SubResource( 2 )
+shader_param/vel = -0.5
+shader_param/des = 0.0
+shader_param/time = 0.0
+
+[sub_resource type="Animation" id=4]
+resource_name = "fire"
+length = 0.2
+loop = true
+tracks/0/type = "value"
+tracks/0/path = NodePath("ship:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/keys = {
+"times": PoolRealArray( 0, 0.1 ),
+"transitions": PoolRealArray( 1, 1 ),
+"update": 1,
+"values": [ 0, 1 ]
+}
+
+[node name="game" type="Node2D"]
+
+[node name="background" type="Sprite" parent="."]
+material = SubResource( 3 )
+position = Vector2( 0.410797, 0 )
+texture = ExtResource( 1 )
+centered = false
+script = ExtResource( 4 )
+ship = NodePath("../ship")
+
+[node name="ship" type="Node2D" parent="."]
+position = Vector2( 80, 268 )
+script = ExtResource( 3 )
+__meta__ = {
+"_edit_group_": true
+}
+
+[node name="ship" type="Sprite" parent="ship"]
+texture = ExtResource( 2 )
+hframes = 2
+frame = 1
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="ship"]
+autoplay = "fire"
+playback_speed = 2.0
+anims/fire = SubResource( 4 )
+
+[node name="blaster" type="Position2D" parent="ship"]
+position = Vector2( 7.62939e-06, -25.8458 )
+
+[node name="enemies" type="Node2D" parent="."]
+script = ExtResource( 6 )
+ship = NodePath("../ship")
+
+[node name="asteroid" parent="enemies" instance=ExtResource( 5 )]
+position = Vector2( 129.479, 69.4116 )
+
+[node name="asteroid2" parent="enemies" instance=ExtResource( 5 )]
+position = Vector2( 34.7058, 142.828 )
+
+[node name="asteroid3" parent="enemies" instance=ExtResource( 5 )]
+position = Vector2( 61.4026, 29.3665 )
+
+[node name="asteroid4" parent="enemies" instance=ExtResource( 5 )]
+position = Vector2( 136.154, 170.859 )
+
+[node name="asteroid5" parent="enemies" instance=ExtResource( 5 )]
+position = Vector2( 34.7058, 69.4116 )
