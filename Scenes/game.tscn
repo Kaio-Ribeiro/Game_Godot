@@ -1,13 +1,19 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=20 format=2]
 
 [ext_resource path="res://sprites/background.png" type="Texture" id=1]
 [ext_resource path="res://sprites/ship.png" type="Texture" id=2]
 [ext_resource path="res://Scripts/ship.gd" type="Script" id=3]
 [ext_resource path="res://Scripts/background.gd" type="Script" id=4]
-[ext_resource path="res://Scenes/asteroid.tscn" type="PackedScene" id=5]
+[ext_resource path="res://Scripts/camera.gd" type="Script" id=5]
 [ext_resource path="res://Scripts/enemies.gd" type="Script" id=6]
+[ext_resource path="res://Scripts/lasers.gd" type="Script" id=7]
+[ext_resource path="res://Scripts/HUD.gd" type="Script" id=8]
+[ext_resource path="res://Scenes/shield.tscn" type="PackedScene" id=9]
+[ext_resource path="res://Scripts/game.gd" type="Script" id=10]
+[ext_resource path="res://soundFX/main_theme.mp3" type="AudioStream" id=11]
+[ext_resource path="res://Scripts/Control.gd" type="Script" id=12]
 
-[sub_resource type="Shader" id=2]
+[sub_resource type="Shader" id=1]
 code = "shader_type canvas_item;
 
 uniform float vel = -.5f;
@@ -18,14 +24,19 @@ void fragment() {
 	COLOR = texture(TEXTURE, UV + (vec2(0, 1f) * time * vel) + vec2(des, 0) );
 }"
 
-[sub_resource type="ShaderMaterial" id=3]
-shader = SubResource( 2 )
+[sub_resource type="ShaderMaterial" id=2]
+shader = SubResource( 1 )
 shader_param/vel = -0.5
 shader_param/des = 0.0
 shader_param/time = 0.0
 
-[sub_resource type="Animation" id=4]
-resource_name = "fire"
+[sub_resource type="CircleShape2D" id=3]
+radius = 39.9736
+
+[sub_resource type="CircleShape2D" id=4]
+radius = 21.4605
+
+[sub_resource type="Animation" id=5]
 length = 0.2
 loop = true
 tracks/0/type = "value"
@@ -41,11 +52,20 @@ tracks/0/keys = {
 "values": [ 0, 1 ]
 }
 
+[sub_resource type="DynamicFontData" id=6]
+antialiased = false
+font_path = "res://fonts/prstartk.ttf"
+
+[sub_resource type="DynamicFont" id=7]
+font_data = SubResource( 6 )
+
 [node name="game" type="Node2D"]
+script = ExtResource( 10 )
 
 [node name="background" type="Sprite" parent="."]
-material = SubResource( 3 )
-position = Vector2( 0.410797, 0 )
+material = SubResource( 2 )
+position = Vector2( -1.93964, -1.15646 )
+scale = Vector2( 1.02584, 1.00969 )
 texture = ExtResource( 1 )
 centered = false
 script = ExtResource( 4 )
@@ -54,9 +74,21 @@ ship = NodePath("../ship")
 [node name="ship" type="Node2D" parent="."]
 position = Vector2( 80, 268 )
 script = ExtResource( 3 )
-__meta__ = {
-"_edit_group_": true
-}
+lasers = NodePath("../scenario")
+
+[node name="Area2D" type="Area2D" parent="ship"]
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ship/Area2D"]
+shape = SubResource( 3 )
+
+[node name="dead_area" type="Area2D" parent="ship"]
+collision_mask = 4
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ship/dead_area"]
+shape = SubResource( 4 )
+
+[node name="shield" parent="ship" instance=ExtResource( 9 )]
 
 [node name="ship" type="Sprite" parent="ship"]
 texture = ExtResource( 2 )
@@ -66,26 +98,57 @@ frame = 1
 [node name="AnimationPlayer" type="AnimationPlayer" parent="ship"]
 autoplay = "fire"
 playback_speed = 2.0
-anims/fire = SubResource( 4 )
+anims/fire = SubResource( 5 )
 
 [node name="blaster" type="Position2D" parent="ship"]
 position = Vector2( 7.62939e-06, -25.8458 )
 
-[node name="enemies" type="Node2D" parent="."]
+[node name="scenario" type="Node2D" parent="."]
+script = ExtResource( 7 )
+ship = NodePath("../ship/ship")
+
+[node name="enemies" type="Node2D" parent="scenario"]
 script = ExtResource( 6 )
-ship = NodePath("../ship")
 
-[node name="asteroid" parent="enemies" instance=ExtResource( 5 )]
-position = Vector2( 129.479, 69.4116 )
+[node name="spawn_timer" type="Timer" parent="scenario/enemies"]
 
-[node name="asteroid2" parent="enemies" instance=ExtResource( 5 )]
-position = Vector2( 34.7058, 142.828 )
+[node name="Camera2D" type="Camera2D" parent="." groups=[
+"camera",
+]]
+scale = Vector2( 0.44, 1.4 )
+anchor_mode = 0
+current = true
+script = ExtResource( 5 )
 
-[node name="asteroid3" parent="enemies" instance=ExtResource( 5 )]
-position = Vector2( 61.4026, 29.3665 )
+[node name="HUD" type="CanvasLayer" parent="." groups=[
+"hud",
+]]
+script = ExtResource( 8 )
 
-[node name="asteroid4" parent="enemies" instance=ExtResource( 5 )]
-position = Vector2( 136.154, 170.859 )
+[node name="score" type="Label" parent="HUD"]
+margin_left = 3.0
+margin_top = 5.0
+margin_right = 157.0
+margin_bottom = 21.0
+custom_fonts/font = SubResource( 7 )
+text = "0"
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
-[node name="asteroid5" parent="enemies" instance=ExtResource( 5 )]
-position = Vector2( 34.7058, 69.4116 )
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource( 11 )
+autoplay = true
+
+[node name="Control" type="Control" parent="."]
+pause_mode = 2
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 12 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[connection signal="area_entered" from="ship/Area2D" to="ship" method="_on_Area2D_area_entered"]
+[connection signal="area_entered" from="ship/dead_area" to="ship" method="_on_dead_area_area_entered"]
+[connection signal="timeout" from="scenario/enemies/spawn_timer" to="scenario/enemies" method="_on_spawn_timer_timeout"]
